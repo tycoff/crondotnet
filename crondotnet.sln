@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.33027.164
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34031.279
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "crondotnet", "crondotnet\crondotnet.csproj", "{F31D7AF3-FDFA-44F1-9C63-305BAF11D002}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "crondotnet", "crondotnet\crondotnet.csproj", "{F31D7AF3-FDFA-44F1-9C63-305BAF11D002}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "crondotnet.Tests", "crondotnet.Tests\crondotnet.Tests.csproj", "{6FCFBDF4-ECB7-4FC2-A376-E962B11D487D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "crondotnet.Tests", "crondotnet.Tests\crondotnet.Tests.csproj", "{6FCFBDF4-ECB7-4FC2-A376-E962B11D487D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "crondotnet.Extensions.Hosting", "crondotnet.Extensions.DependencyInjection\crondotnet.Extensions.Hosting.csproj", "{5A6713CE-4366-497C-AA82-C2CEB3276CFA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{6FCFBDF4-ECB7-4FC2-A376-E962B11D487D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6FCFBDF4-ECB7-4FC2-A376-E962B11D487D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6FCFBDF4-ECB7-4FC2-A376-E962B11D487D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A6713CE-4366-497C-AA82-C2CEB3276CFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A6713CE-4366-497C-AA82-C2CEB3276CFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A6713CE-4366-497C-AA82-C2CEB3276CFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A6713CE-4366-497C-AA82-C2CEB3276CFA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

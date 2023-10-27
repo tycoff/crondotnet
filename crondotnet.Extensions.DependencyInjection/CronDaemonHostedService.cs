@@ -4,28 +4,27 @@ using Microsoft.Extensions.Options;
 
 namespace crondotnet.Extensions.DependencyInjection
 {
-    public class CronDaemonHostedService : IHostedService
+    internal class CronDaemonHostedService : IHostedService
     {
         public CronDaemonHostedService(
-                IServiceProvider serviceProvider)
+                IServiceScopeFactory scopeFactory,
+                ICronDaemon cronDaemon,
+                IOptions<CronDaemonOptions> options)
         {
-            ServiceProvider = serviceProvider;
+            ScopeFactory = scopeFactory;
+            CronDaemon = cronDaemon;
+            Options = options;
         }
 
-        private AsyncServiceScope Scope { get; set; }
-
-        private IServiceProvider ServiceProvider { get; }
+        private IServiceScopeFactory ScopeFactory { get; }
 
         private ICronDaemon CronDaemon { get; set; }
 
+        private IOptions<CronDaemonOptions> Options { get; }
+
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            Scope = ServiceProvider.CreateAsyncScope();
-
-            CronDaemon = Scope.ServiceProvider.GetRequiredService<ICronDaemon>();
-            var options = Scope.ServiceProvider.GetRequiredService<IOptions<CronDaemonOptions>>();
-
-            foreach (var job in options.Value.Jobs)
+            foreach (var job in Options.Value.Jobs)
             {
                 if (job.StaticTask != null)
                 {
@@ -33,11 +32,7 @@ namespace crondotnet.Extensions.DependencyInjection
                 }
                 else if (job.ServiceType != null)
                 {
-                    var service = Scope.ServiceProvider.GetRequiredService(job.ServiceType) as IThinService;
-                    if (service != null)
-                    {
-                        CronDaemon.AddJob(job.Expression, new ThinServiceCronWrapper(service).RunService);
-                    }
+                    CronDaemon.AddJob(job.Expression, new ThinServiceCronWrapper(ScopeFactory, job.ServiceType).RunService);
                 }
                 else
                 {
@@ -50,22 +45,38 @@ namespace crondotnet.Extensions.DependencyInjection
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            await CronDaemon.StopAsync();
-            await Scope.DisposeAsync();
+            try
+            {
+                await CronDaemon.StopAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                // no-op
+            }
         }
 
-        private class ThinServiceCronWrapper
+        private sealed class ThinServiceCronWrapper
         {
-            public ThinServiceCronWrapper(IThinService service)
+            public ThinServiceCronWrapper(
+                        IServiceScopeFactory scopeFactory,
+                        Type serviceType)
             {
-                Service = service;
+                ScopeFactory = scopeFactory;
+                ServiceType = serviceType;
             }
 
-            private IThinService Service { get; }
+            private IServiceScopeFactory ScopeFactory { get; }
+            private Type ServiceType { get; }
+
 
             public async Task RunService(CancellationToken cancellationToken)
             {
-                await Service.Run(cancellationToken);
+                using var scope = ScopeFactory.CreateScope();
+                var service = scope.ServiceProvider.GetRequiredService(ServiceType) as IThinService;
+                if (service != null)
+                {
+                    await service.Run(cancellationToken);
+                }
             }
         }
     }

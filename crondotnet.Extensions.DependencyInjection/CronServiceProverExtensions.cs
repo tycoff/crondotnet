@@ -9,7 +9,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddCron(this IServiceCollection services, Action<ICronDaemonOptionsBuilder>? cronBuilder = null)
         {
             services.AddHostedService<CronDaemonHostedService>();
-            services.AddScoped<ICronDaemon, CronDaemon>();
+            services.AddSingleton<ICronDaemon, CronDaemon>();
 
             var cronDaemonOptionsBuilder = new CronDaemonOptionsBuilder(services);
             cronBuilder?.Invoke(cronDaemonOptionsBuilder);

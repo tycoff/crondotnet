@@ -17,7 +17,9 @@ namespace crondotnet
         private readonly PeriodicTimer timer;
         private readonly List<ICronJob> cronJobs = new List<ICronJob>();
         private CancellationTokenSource tokenSource = null;
-        private Task timerTask = null;
+        private Task startTask = null;
+        private Task cleanupTask = null;
+        private readonly HashSet<Task> runningTasks = new HashSet<Task>();
 
         public CronDaemon()
         {
@@ -32,10 +34,11 @@ namespace crondotnet
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            if (timerTask == null)
+            if (startTask == null)
             {
                 tokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                timerTask = InternalStart(tokenSource.Token);
+                startTask = InternalStart(tokenSource.Token);
+                cleanupTask = PurgeTaskList(tokenSource.Token);
             }
 
             return Task.CompletedTask;
@@ -43,15 +46,23 @@ namespace crondotnet
 
         public async Task StopAsync()
         {
-            tokenSource.Cancel();
-            await timerTask;
+            try
+            {
+                tokenSource.Cancel();
+                await startTask;
+                await cleanupTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // no-op
+            }
         }
 
         private async Task InternalStart(CancellationToken cancellationToken)
         {
             var currentTime = DateTime.Now;
             var targetTime = currentTime.Date.AddHours(currentTime.Hour).AddMinutes(currentTime.Minute + 1);
-                    // .AddSeconds(currentTime.Second + (30 - (currentTime.Second % 30))); // If we wanted to increase resolution, this would allow for specify second targetting.
+            // .AddSeconds(currentTime.Second + (30 - (currentTime.Second % 30))); // If we wanted to increase resolution, this would allow for specify second targetting.
 
             DateTime? lastRun = null;
 
@@ -66,7 +77,7 @@ namespace crondotnet
                     {
                         lastRun = DateTime.Now;
                         foreach (ICronJob job in cronJobs)
-                            job.Execute(lastRun.Value, cancellationToken);
+                            runningTasks.Add(job.Execute(lastRun.Value, cancellationToken));
                     }
 
                     await timer.WaitForNextTickAsync(cancellationToken);
@@ -76,6 +87,31 @@ namespace crondotnet
                     break;
                 }
             }
+        }
+
+        private async Task PurgeTaskList(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    if (runningTasks.Count > 0)
+                    {
+                        var taskTask = await Task.WhenAny(runningTasks);
+                        if (taskTask != null)
+                            runningTasks.Remove(taskTask);
+                    }
+                    await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    // token was canceled.
+                    break;
+                }
+            }
+
+            // wait for remaining tasks to clean up
+            await Task.WhenAll(runningTasks);
         }
     }
 }

@@ -19,7 +19,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Registrations.Add((services) =>
             {
-                services.AddScoped<IInternalJob>(sp =>
+                services.AddSingleton<IInternalJob>(sp =>
                 {
                     var options = sp.GetRequiredService<IOptionsMonitor<CronDaemonOptions>>();
                     return new InternalJob(Options.Options.Create(options.Get(jobName)), job);
@@ -36,7 +36,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Registrations.Add(services =>
             {
-                services.AddScoped<IInternalJob, InternalJob<TService>>();
+                services.AddSingleton<IInternalJob, InternalJob<TService>>();
                 services.Configure<CronDaemonOptions<TService>>(configuration);
             });
 

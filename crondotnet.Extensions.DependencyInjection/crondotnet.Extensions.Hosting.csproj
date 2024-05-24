@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net6;net7</TargetFrameworks>
+		<TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
 		<OutputType>Library</OutputType>
 		<RootNamespace>crondotnet</RootNamespace>
 		<AssemblyName>crondotnet.Extensions.Hosting</AssemblyName>
@@ -13,15 +14,28 @@
 		<PackageProjectUrl>https://github.com/tycoff/crondotnet</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/tycoff/crondotnet</RepositoryUrl>
 		<PackageTags>dotnet Cron Crondaemon Crontab</PackageTags>
-		<Version>0.1.2.0</Version>
+		<Version>0.3.0.0</Version>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(TargetFramework)'=='net6.0'">
+		<DotNetLibVersion>6.0.*</DotNetLibVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(TargetFramework)'=='net7.0'">
+		<DotNetLibVersion>7.0.*</DotNetLibVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(TargetFramework)'=='net8.0'">
+		<DotNetLibVersion>8.0.*</DotNetLibVersion>
+	</PropertyGroup>
+	
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.1" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="$(DotNetLibVersion)" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="$(DotNetLibVersion)" />
+		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(DotNetLibVersion)" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$(DotNetLibVersion)" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="$(DotNetLibVersion)" />
 	</ItemGroup>
 
 	<ItemGroup>

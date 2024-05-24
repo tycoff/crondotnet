@@ -1,3 +1,4 @@
+using DotNext.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -12,14 +13,13 @@ namespace crondotnet
         Task StopAsync();
     }
 
-    public class CronDaemon : ICronDaemon
+    internal sealed class CronDaemon : ICronDaemon
     {
         private readonly PeriodicTimer timer;
-        private readonly List<ICronJob> cronJobs = new List<ICronJob>();
+        private readonly List<ICronJob> cronJobs = [];
         private CancellationTokenSource tokenSource = null;
         private Task startTask = null;
-        private Task cleanupTask = null;
-        private readonly HashSet<Task> runningTasks = new HashSet<Task>();
+        private readonly TaskCompletionPipe<Task> taskCompletionPipe = new TaskCompletionPipe<Task>();
 
         public CronDaemon()
         {
@@ -34,28 +34,15 @@ namespace crondotnet
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            if (startTask == null)
-            {
-                tokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                startTask = InternalStart(tokenSource.Token);
-                cleanupTask = PurgeTaskList(tokenSource.Token);
-            }
-
-            return Task.CompletedTask;
+            tokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            startTask ??= InternalStart(tokenSource.Token);
+            return startTask;
         }
 
-        public async Task StopAsync()
+        public Task StopAsync()
         {
-            try
-            {
-                tokenSource.Cancel();
-                await startTask;
-                await cleanupTask;
-            }
-            catch (OperationCanceledException)
-            {
-                // no-op
-            }
+            tokenSource.Cancel();
+            return Task.CompletedTask;
         }
 
         private async Task InternalStart(CancellationToken cancellationToken)
@@ -67,51 +54,23 @@ namespace crondotnet
             DateTime? lastRun = null;
 
             // wait until the next 30 second interval before starting to trigger.
-            await Task.Delay(targetTime - currentTime);
+            await Task.Delay(targetTime - currentTime, cancellationToken);
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                try
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (!cancellationToken.IsCancellationRequested && (!lastRun.HasValue || DateTime.Now.Minute != lastRun.Value.Minute))
                 {
-                    if (!cancellationToken.IsCancellationRequested && (!lastRun.HasValue || DateTime.Now.Minute != lastRun.Value.Minute))
+                    lastRun = DateTime.Now;
+                    foreach (ICronJob job in cronJobs)
                     {
-                        lastRun = DateTime.Now;
-                        foreach (ICronJob job in cronJobs)
-                            runningTasks.Add(job.Execute(lastRun.Value, cancellationToken));
+                        taskCompletionPipe.Add(job.Execute(lastRun.Value, cancellationToken));
                     }
+                }
 
-                    await timer.WaitForNextTickAsync(cancellationToken);
-                }
-                catch (TaskCanceledException)
-                {
-                    break;
-                }
+                await timer.WaitForNextTickAsync(cancellationToken);
             }
-        }
-
-        private async Task PurgeTaskList(CancellationToken cancellationToken)
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                try
-                {
-                    if (runningTasks.Count > 0)
-                    {
-                        var taskTask = await Task.WhenAny(runningTasks);
-                        if (taskTask != null)
-                            runningTasks.Remove(taskTask);
-                    }
-                    await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
-                }
-                catch (OperationCanceledException)
-                {
-                    // token was canceled.
-                    break;
-                }
-            }
-
-            // wait for remaining tasks to clean up
-            await Task.WhenAll(runningTasks);
         }
     }
 }

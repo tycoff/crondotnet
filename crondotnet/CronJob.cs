@@ -11,7 +11,7 @@ namespace crondotnet
         Task Execute(DateTime startTime, CancellationToken cancellationToken);
     }
 
-    public class CronJob : ICronJob
+    internal sealed class CronJob : ICronJob
     {
         private readonly ICronSchedule _cronSchedule;
         private readonly ExecuteCronJob _threadStart;

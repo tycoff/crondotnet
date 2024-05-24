@@ -10,7 +10,7 @@ namespace crondotnet
         bool IsTime(DateTime date_time);
     }
 
-    public class CronSchedule : ICronSchedule
+    internal sealed class CronSchedule : ICronSchedule
     {
         #region Readonly Class Members
 

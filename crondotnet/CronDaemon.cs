@@ -1,19 +1,9 @@
 using DotNext.Threading.Tasks;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace crondotnet
 {
-    public interface ICronDaemon
-    {
-        void AddJob(string schedule, ExecuteCronJob action);
-        Task StartAsync(CancellationToken cancellationToken);
-        Task StopAsync();
-    }
 
-    internal sealed class CronDaemon : ICronDaemon
+    public sealed class CronDaemon : ICronDaemon
     {
         private readonly PeriodicTimer timer;
         private readonly List<ICronJob> cronJobs = [];
@@ -26,22 +16,22 @@ namespace crondotnet
             timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
         }
 
-        public void AddJob(string schedule, ExecuteCronJob action)
+        public void AddJob(ICronJob cronJob)
         {
-            var cj = new CronJob(schedule, action);
-            cronJobs.Add(cj);
+            cronJobs.Add(cronJob);
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            tokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            tokenSource ??= CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             startTask ??= InternalStart(tokenSource.Token);
             return startTask;
         }
 
         public Task StopAsync()
         {
-            tokenSource.Cancel();
+            taskCompletionPipe?.Complete();
+            tokenSource?.Cancel();
             return Task.CompletedTask;
         }
 

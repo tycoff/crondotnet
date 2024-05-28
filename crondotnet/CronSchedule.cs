@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace crondotnet
@@ -39,9 +37,9 @@ namespace crondotnet
         {
         }
 
-        public CronSchedule(string expressions)
+        public CronSchedule(string expression)
         {
-            _expression = expressions;
+            _expression = expression;
             Generate();
         }
 

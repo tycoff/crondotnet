@@ -1,7 +1,6 @@
-﻿using crondotnet;
-using crondotnet.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace Microsoft.Extensions.DependencyInjection
+namespace crondotnet
 {
     public static class CronServiceProviderExtensions
     {

@@ -1,29 +1,26 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Primitives;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using System.Diagnostics.CodeAnalysis;
 
 namespace crondotnet
 {
-    internal sealed class InternalJob : ICronJob
+    internal sealed class InternalJobWithOptions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TOptions> : ICronJob
     {
         [ActivatorUtilitiesConstructor]
-        public InternalJob(
-                IConfiguration configuration,
-                string expressionKey,
+        public InternalJobWithOptions(
+                IOptionsMonitor<TOptions> options,
+                Func<TOptions, string> expressionSelector,
                 ExecuteCronJob job)
         {
-            ReloadToken = configuration.GetReloadToken();
-            Schedule = new CronSchedule(configuration.GetValue<string>(expressionKey));
-            ReloadToken.RegisterChangeCallback(state =>
+            Schedule = new CronSchedule(expressionSelector(options.CurrentValue));
+            options.OnChange((updatedOptions, key) =>
             {
-                Schedule = new CronSchedule(configuration.GetValue<string>(expressionKey));
-            }, null);
+                Schedule = new CronSchedule(expressionSelector(updatedOptions));
+            });
             Job = job;
         }
 
         private ExecuteCronJob Job { get; }
-
-        private IChangeToken ReloadToken { get; }
 
         private ICronSchedule Schedule { get; set; }
 

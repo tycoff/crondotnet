@@ -1,23 +1,12 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace crondotnet
 {
-    public delegate Task ExecuteCronJob(CancellationToken cancellationToken);
-
-    public interface ICronJob
-    {
-        Task Execute(DateTime startTime, CancellationToken cancellationToken);
-    }
-
-    internal sealed class CronJob : ICronJob
+    public sealed class CronJob : ICronJob
     {
         private readonly ICronSchedule _cronSchedule;
         private readonly ExecuteCronJob _threadStart;
         private readonly SemaphoreSlim _semaphore = new(1);
 
-        public CronJob(string schedule, ExecuteCronJob threadStart)
+        private CronJob(string schedule, ExecuteCronJob threadStart)
         {
             _cronSchedule = new CronSchedule(schedule);
             _threadStart = threadStart;
@@ -38,6 +27,11 @@ namespace crondotnet
             {
                 _semaphore.Release();
             }
+        }
+
+        public static CronJob Create(string schedule, ExecuteCronJob threadStart)
+        {
+            return new CronJob(schedule, threadStart);
         }
     }
 }

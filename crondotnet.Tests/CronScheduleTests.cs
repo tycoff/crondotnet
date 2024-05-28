@@ -1,7 +1,4 @@
 using NUnit.Framework;
-using System;
-using System.Collections.Generic;
-using System.Threading;
 
 namespace crondotnet.Tests
 {
@@ -27,7 +24,7 @@ namespace crondotnet.Tests
         public static void divided_array_test()
         {
             var cron_schedule = new CronSchedule("*/2");
-            List<int> results = cron_schedule.minutes.GetRange(0,5);//("*/2", 0, 10);
+            List<int> results = cron_schedule.minutes.GetRange(0, 5);//("*/2", 0, 10);
             Assert.AreEqual(results.ToArray(), new int[] { 0, 2, 4, 6, 8 });
         }
 
@@ -35,7 +32,7 @@ namespace crondotnet.Tests
         public static void range_array_test()
         {
             var cron_schedule = new CronSchedule("1-10");
-            List<int> results = cron_schedule.minutes.GetRange(0,10);//();
+            List<int> results = cron_schedule.minutes.GetRange(0, 10);//();
             Assert.AreEqual(results.ToArray(), new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 });
             var cs = new CronSchedule("1-10/3 20-45/4 * * *");
             results = cs.minutes;
@@ -46,7 +43,7 @@ namespace crondotnet.Tests
         public void wild_array_test()
         {
             var cron_schedule = new CronSchedule("*");
-            List<int> results = cron_schedule.minutes.GetRange(0,10);//("*", 0, 10);
+            List<int> results = cron_schedule.minutes.GetRange(0, 10);//("*", 0, 10);
             Assert.AreEqual(results.ToArray(), new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 });
         }
 
@@ -62,7 +59,7 @@ namespace crondotnet.Tests
         public void generate_values_divided_test()
         {
             var cron_schedule = new CronSchedule("*/2");
-            List<int> results = cron_schedule.minutes.GetRange(0,5);//(, 0, 10);
+            List<int> results = cron_schedule.minutes.GetRange(0, 5);//(, 0, 10);
             Assert.AreEqual(results.ToArray(), new int[] { 0, 2, 4, 6, 8 });
         }
 
@@ -70,7 +67,7 @@ namespace crondotnet.Tests
         public void generate_values_range_test()
         {
             var cron_schedule = new CronSchedule("1-10");
-            List<int> results = cron_schedule.minutes.GetRange(0,10);//(, 0, 10);
+            List<int> results = cron_schedule.minutes.GetRange(0, 10);//(, 0, 10);
             Assert.AreEqual(results.ToArray(), new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 });
         }
 
@@ -181,7 +178,7 @@ namespace crondotnet.Tests
         public static void ppp()
         {
             var d = new CronDaemon();
-            d.AddJob("*/1 * * * *", async (token) => { Console.WriteLine(DateTime.Now.ToString()); });
+            d.AddJob(CronJob.Create("*/1 * * * *", async (token) => { Console.WriteLine(DateTime.Now.ToString()); }));
             d.StartAsync(CancellationToken.None);
             //Thread.Sleep(60 * 1000);
         }

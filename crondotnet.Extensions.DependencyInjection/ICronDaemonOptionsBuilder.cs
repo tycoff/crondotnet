@@ -1,12 +1,13 @@
-﻿using crondotnet;
-using Microsoft.Extensions.Configuration;
-
-namespace Microsoft.Extensions.DependencyInjection
+﻿namespace crondotnet
 {
     public interface ICronDaemonOptionsBuilder
     {
-        ICronDaemonOptionsBuilder AddJob(IConfiguration configuration, string jobName, ExecuteCronJob job);
+        ICronDaemonOptionsBuilder AddJob(ExecuteCronJob job, string expressionKey);
 
-        ICronDaemonOptionsBuilder AddJob<TService>(IConfiguration configuration) where TService : IThinService;
+        ICronDaemonOptionsBuilder AddJob<TOptions>(ExecuteCronJob job, Func<TOptions, string> expressionSelector);
+
+        ICronDaemonOptionsBuilder AddJob<TService>(string expressionKey) where TService : IThinService;
+
+        ICronDaemonOptionsBuilder AddJob<TService, TOptions>(Func<TOptions, string> expressionSelector) where TService : IThinService;
     }
 }

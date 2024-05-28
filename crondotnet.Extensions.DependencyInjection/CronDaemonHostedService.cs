@@ -1,13 +1,12 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 
-namespace crondotnet.Extensions.DependencyInjection
+namespace crondotnet
 {
     internal sealed class CronDaemonHostedService : IHostedService
     {
         public CronDaemonHostedService(
                 ICronDaemon cronDaemon,
-                IEnumerable<IInternalJob> jobs)
+                IEnumerable<ICronJob> jobs)
         {
             CronDaemon = cronDaemon;
             Jobs = jobs;
@@ -15,13 +14,13 @@ namespace crondotnet.Extensions.DependencyInjection
 
         private ICronDaemon CronDaemon { get; set; }
 
-        private IEnumerable<IInternalJob> Jobs { get; }
+        private IEnumerable<ICronJob> Jobs { get; }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             foreach (var job in Jobs)
             {
-                CronDaemon.AddJob(job.Expression, job.ExecuteCronJob);
+                CronDaemon.AddJob(job);
             }
 
             await CronDaemon.StartAsync(cancellationToken);

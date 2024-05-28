@@ -1,9 +1,7 @@
-﻿using crondotnet;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
 
-namespace Microsoft.Extensions.DependencyInjection
+namespace crondotnet
 {
     public sealed class CronDaemonOptionsBuilder : ICronDaemonOptionsBuilder
     {
@@ -15,29 +13,56 @@ namespace Microsoft.Extensions.DependencyInjection
             this.services = services;
         }
 
-        public ICronDaemonOptionsBuilder AddJob(IConfiguration configuration, string jobName, ExecuteCronJob job)
+        public ICronDaemonOptionsBuilder AddJob(ExecuteCronJob job, string expressionKey)
         {
             Registrations.Add((services) =>
             {
-                services.AddSingleton<IInternalJob>(sp =>
+                services.AddSingleton<ICronJob>(sp =>
                 {
-                    var options = sp.GetRequiredService<IOptionsMonitor<CronDaemonOptions>>();
-                    return new InternalJob(Options.Options.Create(options.Get(jobName)), job);
+                    return ActivatorUtilities.CreateInstance<InternalJob>(sp, [expressionKey, job]);
                 });
-
-                services.Configure<CronDaemonOptions>(jobName, configuration);
             });
 
             return this;
         }
 
-        public ICronDaemonOptionsBuilder AddJob<TService>(IConfiguration configuration)
+        public ICronDaemonOptionsBuilder AddJob<TService>(string expressionKey)
             where TService : IThinService
         {
             Registrations.Add(services =>
             {
-                services.AddSingleton<IInternalJob, InternalJob<TService>>();
-                services.Configure<CronDaemonOptions<TService>>(configuration);
+                services.AddSingleton<ICronJob>(sp =>
+                {
+                    return ActivatorUtilities.CreateInstance<InternalJob<TService>>(sp, [expressionKey]);
+                });
+            });
+
+            services.TryAddScoped(typeof(TService));
+
+            return this;
+        }
+
+        public ICronDaemonOptionsBuilder AddJob<TOptions>(ExecuteCronJob job, Func<TOptions, string> expressionSelector)
+        {
+            Registrations.Add((services) =>
+            {
+                services.AddSingleton<ICronJob>(sp =>
+                {
+                    return ActivatorUtilities.CreateInstance<InternalJobWithOptions<TOptions>>(sp, [expressionSelector, job]);
+                });
+            });
+
+            return this;
+        }
+
+        public ICronDaemonOptionsBuilder AddJob<TService, TOptions>(Func<TOptions, string> expressionSelector) where TService : IThinService
+        {
+            Registrations.Add(services =>
+            {
+                services.AddSingleton<ICronJob>(sp =>
+                {
+                    return ActivatorUtilities.CreateInstance<InternalJobWithOptions<TService, TOptions>>(sp, [expressionSelector]);
+                });
             });
 
             services.TryAddScoped(typeof(TService));

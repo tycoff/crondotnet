@@ -62,5 +62,12 @@ namespace crondotnet
                 await timer.WaitForNextTickAsync(cancellationToken);
             }
         }
+
+        public void Dispose()
+        {
+            timer?.Dispose();
+            tokenSource?.Dispose();
+            startTask?.Dispose();
+        }
     }
 }

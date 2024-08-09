@@ -1,6 +1,6 @@
 ﻿namespace crondotnet
 {
-    public interface ICronDaemon
+    public interface ICronDaemon : IDisposable
     {
         void AddJob(ICronJob cronJob);
         Task StartAsync(CancellationToken cancellationToken);
